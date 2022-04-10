@@ -1,0 +1,88 @@
+<html ng-app="app">
+
+<head>
+    <script type="text/javascript">
+
+        var myWebSocket;
+
+
+        function connectToWS() {
+            var endpoint = document.getElementById("endpoint").value;
+            var user_id = document.getElementById("user_id").value;
+            if (myWebSocket !== undefined) {
+                myWebSocket.close()
+            }
+
+            myWebSocket = new WebSocket(`ws://${endpoint}?userId=${user_id}`);
+
+            myWebSocket.onmessage = function (event) {
+                var leng;
+                if (event.data.size === undefined) {
+                    leng = event.data.length
+                } else {
+                    leng = event.data.size
+                }
+                console.log("onmessage. size: " + leng + ", content: " + event.data);
+                document.getElementById("messages").innerHTML += `<div class="message">${event.data}</div>`;
+            }
+
+            myWebSocket.onopen = function (evt) {
+                console.log("onopen.");
+            };
+
+            myWebSocket.onclose = function (evt) {
+                console.log("onclose.");
+            };
+
+            myWebSocket.onerror = function (evt) {
+                console.log("Error!");
+            };
+        }
+
+        function sendMsg() {
+            var message = document.getElementById("myMessage").value;
+            var userId = document.getElementById("user_id").value;
+            var clientId = document.getElementById("clientId").value;
+            const msg = JSON.stringify({
+                "data": message,
+                timestamp: new Date().getTime(),
+                userId,
+                clientId
+            });
+            console.log("Sending message: " + msg);
+            myWebSocket.send(msg);
+        }
+
+        function closeConn() {
+            myWebSocket.close();
+        }
+
+    </script>
+</head>
+
+<body>
+
+    <form>
+        user id: <input type="text" id="user_id" name="user_id" value="user1" />
+        connection to: <input type="text" id="endpoint" name="endpoint" value="localhost:5001/websockets"
+            style="width: 200px"><br>
+    </form>
+
+    <input type="button" onclick="connectToWS()" value="connect to WebSocket endpoint" /><br><br>
+
+    <form>
+        to: <input type="text" id="clientId" name="clientId" value="user2"><br>
+        message: <input type="text" id="myMessage" name="myMessage" value="hi there!"><br>
+    </form>
+
+    <input type="button" onclick="sendMsg()" value="Send message" />
+
+    <input type="button" onclick="closeConn()" value="Close connection" />
+
+    <div id="messages">
+        <p>Messages will appear here:</p>
+    </div>
+
+</body>
+
+</html>
