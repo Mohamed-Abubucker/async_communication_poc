@@ -16,6 +16,15 @@ Parameters:
     AllowedPattern: ^[A-Za-z_]+$
     ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'
 
+  MessageHistoryTable:
+    Type: String
+    Default: 'message_history_table'
+    Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
+    MinLength: 3
+    MaxLength: 50
+    AllowedPattern: ^[A-Za-z_]+$
+    ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'
+
 Resources:
   ServerlessSocketApi:
     Type: AWS::ApiGatewayV2::Api
@@ -113,6 +122,21 @@ Resources:
       SSESpecification:
         SSEEnabled: True
       TableName: !Ref TableName
+  MessagesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: "messageId"
+        AttributeType: "S"
+      KeySchema:
+      - AttributeName: "messageId"
+        KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: True
+      TableName: !Ref MessageHistoryTable
   OnConnectFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -165,6 +189,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref TableName
+          MESSAGE_HISTORY: !Ref MessageHistoryTable
       Policies:
       - DynamoDBCrudPolicy:
           TableName: !Ref TableName

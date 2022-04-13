@@ -5,7 +5,7 @@ const AWS = require('aws-sdk');
 
 const ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: process.env.AWS_REGION });
 
-const { TABLE_NAME } = process.env;
+const { TABLE_NAME, MESSAGE_HISTORY } = process.env;
 
 exports.handler = async event => {
   let connectionData;
@@ -29,6 +29,24 @@ exports.handler = async event => {
   // TODO: verify the message data
 
   const verifiedMessage = data + ': VERIFIED';
+
+  // insert the message into the message history table
+
+  try {
+    await ddb.put({
+      TableName: MESSAGE_HISTORY,
+      Item: {
+        messageId: `${timestamp}_${userId}_${clientId}`,
+        userId,
+        clientId,
+        timestamp,
+        data: verifiedMessage
+      }
+    }).promise();
+  } catch (e) {
+    return { statusCode: 500, body: e.stack };
+  }
+
 
   // getting connection id from the database
   const receiver = connectionData.Items.find(item => item.clientId === clientId);
